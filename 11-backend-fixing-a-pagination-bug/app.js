@@ -4,7 +4,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const graphqlHttp = require('express-graphql');
+const { graphqlHTTP } = require('express-graphql');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
@@ -12,13 +12,13 @@ const auth = require('./middleware/auth');
 const { clearImage } = require('./util/file');
 
 const app = express();
-
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'images');
+const fileStorage= multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'images/'); // Folder where files will be saved
   },
-  filename: (req, file, cb) => {
-    cb(null, new Date().toISOString() + '-' + file.originalname);
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname)); // e.g. 1625155565-123456789.jpg
   }
 });
 
@@ -37,7 +37,7 @@ const fileFilter = (req, file, cb) => {
 // app.use(bodyParser.urlencoded()); // x-www-form-urlencoded <form>
 app.use(bodyParser.json()); // application/json
 app.use(
-  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+ multer({ storage: fileStorage }).single('image')
 );
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
@@ -57,23 +57,32 @@ app.use((req, res, next) => {
 app.use(auth);
 
 app.put('/post-image', (req, res, next) => {
+  console.log("file upload:", req.file);
+  console.log("old path:", req.body.oldPath);
+  let imagePath;
   if (!req.isAuth) {
     throw new Error('Not authenticated!');
   }
-  if (!req.file) {
-    return res.status(200).json({ message: 'No file provided!' });
+  if (req.file==undefined) {
+    console.log("in if file not uploaded");
+    //return res.status(200).json({ message: 'No file provided!' });
+    imagePath=req.body.oldPath;
   }
-  if (req.body.oldPath) {
-    clearImage(req.body.oldPath);
+  else{
+    console.log("in else file uploaded");
+    imagePath=req.file.path;
+    if(req.body.oldPath!=undefined)
+        clearImage(req.body.oldPath);
   }
+  console.log("final path:", imagePath);
   return res
     .status(201)
-    .json({ message: 'File stored.', filePath: req.file.path });
+    .json({ message: 'File stored.', filePath: imagePath });
 });
 
 app.use(
   '/graphql',
-  graphqlHttp({
+  graphqlHTTP({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
     graphiql: true,
@@ -96,11 +105,10 @@ app.use((error, req, res, next) => {
   const data = error.data;
   res.status(status).json({ message: message, data: data });
 });
-
 mongoose
   .connect(
-    'mongodb+srv://maximilian:9u4biljMQc4jjqbe@cluster0-ntrwp.mongodb.net/messages?retryWrites=true'
-  )
+     'mongodb+srv://root:root@cluster0.nhepvqi.mongodb.net/blog?retryWrites=true&w=majority&appName=Cluster0'
+  )  
   .then(result => {
     app.listen(8080);
   })

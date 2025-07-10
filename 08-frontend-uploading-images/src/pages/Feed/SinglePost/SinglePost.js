@@ -24,6 +24,9 @@ class SinglePost extends Component {
             content
             imageUrl
             createdAt
+            creator{
+              name
+            }
           }
         }
       `
@@ -42,11 +45,11 @@ class SinglePost extends Component {
       .then(resData => {
         console.log(resData);
         this.setState({
-          title: resData.post.title,
-          author: resData.post.creator.name,
-          image: 'http://localhost:8080/' + resData.post.imageUrl,
-          date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
-          content: resData.post.content
+          title: resData.data.post.title,
+          author: resData.data.post.creator.name,
+          image: 'http://localhost:8080/' + resData.data.post.imageUrl,
+          date: new Date(resData.data.post.createdAt).toLocaleDateString('en-US'),
+          content: resData.data.post.content
         });
       })
       .catch(err => {

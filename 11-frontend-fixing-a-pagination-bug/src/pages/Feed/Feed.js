@@ -188,7 +188,8 @@ class Feed extends Component {
     })
       .then(res => res.json())
       .then(fileResData => {
-        const imageUrl = fileResData.filePath || 'undefined';
+        console.log(fileResData.filePath);
+        const imageUrl = fileResData.filePath.replace("\\" ,"/");
         let graphqlQuery = {
           query: `
           mutation CreateNewPost($title: String!, $content: String!, $imageUrl: String!) {
@@ -251,11 +252,11 @@ class Feed extends Component {
       .then(resData => {
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
-            "Validation failed. Make sure the email address isn't used yet!"
+           resData.errors[0].message
           );
         }
         if (resData.errors) {
-          throw new Error('User login failed!');
+          throw new Error('update post failed');
         }
         let resDataField = 'createPost';
         if (this.state.editPost) {
@@ -334,10 +335,7 @@ class Feed extends Component {
         }
         console.log(resData);
         this.loadPosts();
-        // this.setState(prevState => {
-        //   const updatedPosts = prevState.posts.filter(p => p._id !== postId);
-        //   return { posts: updatedPosts, postsLoading: false };
-        // });
+        
       })
       .catch(err => {
         console.log(err);

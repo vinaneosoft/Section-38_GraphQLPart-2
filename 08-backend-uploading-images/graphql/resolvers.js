@@ -142,7 +142,7 @@ module.exports = {
       error.code = 401;
       throw error;
     }
-    const post = await Post.findById(_id)
+    const post = await Post.findById(_id).populate('creator');
     return post;
   }
 };

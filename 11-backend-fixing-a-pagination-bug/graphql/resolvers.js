@@ -222,8 +222,10 @@ module.exports = {
       error.code = 403;
       throw error;
     }
+
     clearImage(post.imageUrl);
-    await Post.findByIdAndRemove(id);
+    await Post.findByIdAndDelete(id);
+    //await Post.findByIdAndRemove(id);
     const user = await User.findById(req.userId);
     user.posts.pull(id);
     await user.save();
@@ -241,7 +243,7 @@ module.exports = {
       error.code = 404;
       throw error;
     }
-    return { ...user._doc, _id: user._id.toString() };
+    return user;
   },
   updateStatus: async function({ status }, req) {
     if (!req.isAuth) {
@@ -257,6 +259,6 @@ module.exports = {
     }
     user.status = status;
     await user.save();
-    return { ...user._doc, _id: user._id.toString() };
+    return user;
   }
 };
