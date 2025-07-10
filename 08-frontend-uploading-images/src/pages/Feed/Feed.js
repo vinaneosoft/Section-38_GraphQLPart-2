@@ -62,6 +62,7 @@ class Feed extends Component {
               _id
               title
               content
+              imageUrl
               creator {
                 name
               }
@@ -84,6 +85,8 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log(resData);
+        
         if (resData.errors) {
           throw new Error('Fetching posts failed!');
         }
@@ -162,13 +165,16 @@ class Feed extends Component {
     })
       .then(res => res.json())
       .then(fileResData => {
-        const imageUrl = fileResData.filePath;
+        console.log(fileResData.filePath);
+        const imageUrl = fileResData.filePath.replace("\\" ,"/");
         let graphqlQuery = {
           query: `
           mutation {
-            createPost(postInput: {title: "${postData.title}", content: "${
-            postData.content
-          }", imageUrl: "${imageUrl}"}) {
+            createPost(postInput:{
+            title: "${postData.title}", 
+            content: "${postData.content}", 
+            imageUrl: "${imageUrl}"
+            }) {
               _id
               title
               content
@@ -195,13 +201,15 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log(resData);
+        
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
-            "Validation failed. Make sure the email address isn't used yet!"
+           resData.errors[0].message
           );
         }
         if (resData.errors) {
-          throw new Error('User login failed!');
+          throw new Error('Create post failed!');
         }
         console.log(resData);
         const post = {

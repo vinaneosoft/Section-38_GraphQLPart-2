@@ -22,7 +22,7 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    fetch('http://localhost:8080/auth/status', {
+   /*  fetch('http://localhost:8080/auth/status', {
       headers: {
         Authorization: 'Bearer ' + this.props.token
       }
@@ -37,7 +37,7 @@ class Feed extends Component {
         this.setState({ status: resData.status });
       })
       .catch(this.catchError);
-
+ */
     this.loadPosts();
   }
 
@@ -54,26 +54,56 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('http://localhost:8080/feed/posts?page=' + page, {
+
+    const graphqlQuery = {
+      query: `
+        {
+          posts{
+            posts {
+              _id
+              title
+              content
+              creator {
+                name
+              }
+              createdAt
+            }
+            totalPosts
+          }
+        }
+      `
+    };
+
+    fetch('http://localhost:8080/graphql', {
+      method: 'POST',
       headers: {
-        Authorization: 'Bearer ' + this.props.token
-      }
+        Authorization: 'Bearer ' + this.props.token,
+        'Content-Type': 'application/json'
+      },
+       body: JSON.stringify(graphqlQuery)
     })
       .then(res => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.');
-        }
         return res.json();
       })
       .then(resData => {
+        console.log(resData);
+
+         if (resData.errors && resData.errors[0].status === 422) {
+          throw new Error(
+           resData.errors[0].message
+          );
+        }
+        if (resData.errors) {
+          throw new Error('post loading failed!');
+        }
         this.setState({
-          posts: resData.posts.map(post => {
+          posts: resData.data.posts.posts.map(post => {
             return {
               ...post,
               imagePath: post.imageUrl
             };
           }),
-          totalPosts: resData.totalItems,
+          totalPosts: resData.data.posts.totalPosts,
           postsLoading: false
         });
       })
@@ -132,6 +162,12 @@ class Feed extends Component {
     formData.append('content', postData.content);
     formData.append('image', postData.image);
 
+ 
+
+    
+    
+    
+    
     let graphqlQuery = {
       query: `
         mutation {
@@ -165,13 +201,13 @@ class Feed extends Component {
       .then(resData => {
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
-            "Validation failed. Make sure the email address isn't used yet!"
+           resData.errors[0].message
           );
         }
         if (resData.errors) {
-          throw new Error('User login failed!');
+          throw new Error('create post failed!');
         }
-        console.log(resData);
+        
         const post = {
           _id: resData.data.createPost._id,
           title: resData.data.createPost.title,
@@ -265,7 +301,7 @@ class Feed extends Component {
         </section>
         <section className="feed__control">
           <Button mode="raised" design="accent" onClick={this.newPostHandler}>
-            New Post
+            New Post 
           </Button>
         </section>
         <section className="feed">
@@ -289,7 +325,9 @@ class Feed extends Component {
                   key={post._id}
                   id={post._id}
                   author={post.creator.name}
-                  date={new Date(post.createdAt).toLocaleDateString('en-US')}
+                  date={new Date(post.createdAt).toLocaleDateString("en-US", {
+                  timeZone: "America/New_York"  // Eastern Time (ET)
+                  })}
                   title={post.title}
                   image={post.imageUrl}
                   content={post.content}

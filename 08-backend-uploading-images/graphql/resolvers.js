@@ -62,11 +62,13 @@ module.exports = {
     return { token: token, userId: user._id.toString() };
   },
   createPost: async function({ postInput }, req) {
+    console.log(postInput);
+    
     if (!req.isAuth) {
       const error = new Error('Not authenticated!');
       error.code = 401;
       throw error;
-    }
+    } 
     const errors = [];
     if (
       validator.isEmpty(postInput.title) ||
@@ -125,15 +127,22 @@ module.exports = {
       .limit(perPage)
       .populate('creator');
     return {
-      posts: posts.map(p => {
-        return {
-          ...p._doc,
-          _id: p._id.toString(),
-          createdAt: p.createdAt.toISOString(),
-          updatedAt: p.updatedAt.toISOString()
-        };
-      }),
+      posts: posts,
       totalPosts: totalPosts
     };
+  },
+  post: async function({_id }, req) {
+    if (!req.isAuth) {
+      const error = new Error('Not authenticated!');
+      error.code = 401;
+      throw error;
+    }
+     if (!_id) {
+      const error = new Error('No ID found!');
+      error.code = 401;
+      throw error;
+    }
+    const post = await Post.findById(_id)
+    return post;
   }
 };

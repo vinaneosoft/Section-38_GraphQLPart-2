@@ -82,13 +82,13 @@ class App extends Component {
       .then(resData => {
         if (resData.errors && resData.errors[0].status === 422) {
           throw new Error(
-            "Validation failed. Make sure the email address isn't used yet!"
+            resData.errors[0].message
           );
         }
         if (resData.errors) {
           throw new Error('User login failed!');
         }
-        console.log(resData);
+       // console.log(resData);
         this.setState({
           isAuth: true,
           token: resData.data.login.token,
@@ -105,7 +105,7 @@ class App extends Component {
         this.setAutoLogout(remainingMilliseconds);
       })
       .catch(err => {
-        console.log(err);
+       // console.log(err);
         this.setState({
           isAuth: false,
           authLoading: false,
@@ -150,12 +150,12 @@ class App extends Component {
         if (resData.errors) {
           throw new Error('User creation failed!');
         }
-        console.log(resData);
+        //console.log(resData);
         this.setState({ isAuth: false, authLoading: false });
         this.props.history.replace('/');
       })
       .catch(err => {
-        console.log(err);
+       // console.log(err);
         this.setState({
           isAuth: false,
           authLoading: false,

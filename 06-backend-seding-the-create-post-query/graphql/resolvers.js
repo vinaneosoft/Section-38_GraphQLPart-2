@@ -36,7 +36,7 @@ module.exports = {
       password: hashedPw
     });
     const createdUser = await user.save();
-    return { ...createdUser._doc, _id: createdUser._id.toString() };
+    return createdUser;
   },
   login: async function({ email, password }) {
     const user = await User.findOne({ email: email });
@@ -59,7 +59,7 @@ module.exports = {
       'somesupersecretsecret',
       { expiresIn: '1h' }
     );
-    return { token: token, userId: user._id.toString() };
+    return { token: token, userId: user._id };
   },
   createPost: async function({ postInput }, req) {
     if (!req.isAuth) {
@@ -101,13 +101,11 @@ module.exports = {
     const createdPost = await post.save();
     user.posts.push(createdPost);
     await user.save();
-    return {
-      ...createdPost._doc,
-      _id: createdPost._id.toString(),
-      createdAt: createdPost.createdAt.toISOString(),
-      updatedAt: createdPost.updatedAt.toISOString()
-    };
+    return createdPost;
   },
+
+
+
   posts: async function(args, req) {
     if (!req.isAuth) {
       const error = new Error('Not authenticated!');
@@ -116,17 +114,10 @@ module.exports = {
     }
     const totalPosts = await Post.find().countDocuments();
     const posts = await Post.find()
-      .sort({ createdAt: -1 })
+      //.sort({ createdAt: -1 })
       .populate('creator');
     return {
-      posts: posts.map(p => {
-        return {
-          ...p._doc,
-          _id: p._id.toString(),
-          createdAt: p.createdAt.toISOString(),
-          updatedAt: p.updatedAt.toISOString()
-        };
-      }),
+      posts: posts,
       totalPosts: totalPosts
     };
   }
